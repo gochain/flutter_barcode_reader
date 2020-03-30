@@ -11,6 +11,9 @@ class BarcodeScanner {
   /// If the user cancel the scan an exception with this code is thrown.
   static const UserCanceled = 'USER_CANCELED';
 
+  /// If camera access isn't supported (for example, on web if the current browser doesn't support it)
+  static const CameraAccessNotSupported = 'CAMERA_ACCESS_NOT_SUPPORTED';
+
   /// The method channel
   static const MethodChannel _channel =
       const MethodChannel('de.mintware.barcode_scan');
