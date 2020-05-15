@@ -21,11 +21,8 @@ flutter:
         pluginClass: BarcodeScanPlugin
         fileName: barcode_web.dart
   assets:
-    - assets/jsqrscanner.nocache.js
-    - assets/9F36F6E596D24028CF2BAC1860F22428.cache.js
-    - assets/583759B3547F41A4DB81ABD2A010247E.cache.js
-    - assets/7336332C96BEE798552E9397E317C8AC.cache.js
-    - assets/compilation-mappings.txt
-    - assets/B740E7E455C035DF151FA9FBFC08D197.cache.js
-    - assets/E2DE619934E7B85CBFB9935ADFC149FD.cache.js
+    - assets/zxingjs.js
+    - assets/requirejs.js
+    - assets/adapter.js
+    - assets/corejs.js
     - assets/styles.css

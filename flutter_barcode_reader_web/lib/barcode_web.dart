@@ -1,5 +1,5 @@
-@JS()
-library jsqrscanner;
+@JS("ZXing")
+library zxingjs;
 
 import 'dart:async';
 import 'dart:html';
@@ -12,7 +12,7 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 class BarcodeScanPlugin {
   Completer<String> _completer;
-  JsQRScanner _scanner;
+  BrowserMultiFormatReader _codeReader;
 
   static void registerWith(Registrar registrar) {
     final MethodChannel channel = MethodChannel(
@@ -27,15 +27,21 @@ class BarcodeScanPlugin {
   Future<String> handleMethodCall(MethodCall call) async {
     _ensureMediaDevicesSupported();
     _createCSS();
-    var script = document.createElement('script');
-    script.setAttribute('type', 'text/javascript');
-    document.querySelector('head').append(script);
-    script.setAttribute('src', 'assets/packages/barcode_scan_web/assets/jsqrscanner.nocache.js');
+    _addScript('assets/packages/barcode_scan_web/assets/corejs.js');
+    _addScript('assets/packages/barcode_scan_web/assets/adapter.js');
+    _addScript('assets/packages/barcode_scan_web/assets/zxingjs.js');
     _createHTML();
     document.querySelector('#toolbar p').addEventListener('click', (event) => _onCloseByUser());
-    setProperty(window, 'JsQRScannerReady', allowInterop(this.scannerReady));
+    _startScanning();
     _completer = new Completer<String>();
     return _completer.future;
+  }
+
+  void _addScript(String src) {
+    var script = document.createElement('script');
+    script.setAttribute('type', 'text/javascript');
+    script.setAttribute('src', src);
+    document.head.append(script);
   }
 
   void _ensureMediaDevicesSupported() {
@@ -62,7 +68,9 @@ class BarcodeScanPlugin {
       <p>X</p>
       <div id="clear"></div>
     </div>
-    <div id="scanner"></div>
+    <div id="scanner">
+      <video id="video"></video>
+    </div>
     <div id="cover">
       <div id="topleft"></div>
       <div id="lefttop"></div>
@@ -77,9 +85,15 @@ class BarcodeScanPlugin {
     document.body.append(containerDiv);
   }
 
-  void onQRCodeScanned(String scannedText) {
+  void _startScanning() {
+    _codeReader = new BrowserMultiFormatReader();
+    var resultPromise = _codeReader.decodeOnceFromVideoDevice(null, 'video');
+    resultPromise.then(allowInterop(this.onCodeScanned), allowInterop(this.reject));
+  }
+
+  void onCodeScanned(ScanResult scanResult) {
     if (!_completer.isCompleted) {
-      _completer.complete(scannedText);
+      _completer.complete(scanResult.text);
       _close();
     }
   }
@@ -93,27 +107,11 @@ class BarcodeScanPlugin {
   }
 
   void _close() {
-    if (_scanner != null) {
-      _scanner.removeFrom(document.getElementById('scanner'));
-      _scanner.stopScanning();
-    }
+    _codeReader.reset();
     document.getElementById('container').remove();
   }
 
-  void scannerReady() {
-    _scanner = JsQRScanner(allowInterop(this.onQRCodeScanned), allowInterop(this.provideVideo));
-    _scanner.setSnapImageMaxSize(300);
-    var scannerParentElement = document.getElementById('scanner');
-    _scanner.appendTo(scannerParentElement);
-  }
-
-  Promise<MediaStream> provideVideo() {
-    var videoPromise = getUserMedia(new UserMediaOptions(video: new VideoOptions(facingMode: 'environment')));
-    videoPromise.then(null, allowInterop(_reject));
-    return videoPromise;
-  } 
-
-  void _reject(reject) {
+  void reject(reject) {
     _completer.completeError(PlatformException(
       code: 'PERMISSION_NOT_GRANTED',
       message: 'Permission to access the camera not granted'
@@ -122,32 +120,17 @@ class BarcodeScanPlugin {
   }
 }
 
-@JS("navigator.mediaDevices.getUserMedia")
-external Promise<MediaStream> getUserMedia(UserMediaOptions options);
-
 @JS()
-@anonymous
-class UserMediaOptions {
-  external VideoOptions get video;
-
-  external factory UserMediaOptions({ VideoOptions video });
+class BrowserMultiFormatReader {
+  external Promise<ScanResult> decodeOnceFromVideoDevice(int deviceId, String videoElementId);
+  external bool isMediaDevicesSupported();
+  external void reset();
 }
 
 @JS()
 @anonymous
-class VideoOptions {
-  external String get facingMode;
-
-  external factory VideoOptions({ String facingMode });
-}
-
-@JS()
-class JsQRScanner {
-  external factory JsQRScanner(Function onQRCodeScanned, Function provideVideo);
-  external setSnapImageMaxSize(int maxSize);
-  external removeFrom(Element element);
-  external appendTo(Element element);
-  external stopScanning();
+class ScanResult {
+  external String get text; 
 }
 
 @JS()
