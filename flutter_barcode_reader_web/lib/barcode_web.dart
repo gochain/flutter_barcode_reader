@@ -20,19 +20,18 @@ class BarcodeScanPlugin {
   List<dynamic> _cameras = new List<dynamic>();
 
   static void registerWith(Registrar registrar) {
-    final MethodChannel channel = MethodChannel(
-      'de.mintware.barcode_scan',
-      const StandardMethodCodec(),
-      registrar.messenger
-    );
+    final MethodChannel channel = MethodChannel('de.mintware.barcode_scan',
+        const StandardMethodCodec(), registrar.messenger);
     final BarcodeScanPlugin instance = new BarcodeScanPlugin();
     channel.setMethodCallHandler(instance.handleMethodCall);
   }
 
   Future<dynamic> handleMethodCall(MethodCall call) async {
     switch (call.method) {
-      case "numberOfCameras": return getNumberOfCameras();
-      default: return callScan(call);
+      case "numberOfCameras":
+        return getNumberOfCameras();
+      default:
+        return callScan(call);
     }
   }
 
@@ -45,7 +44,8 @@ class BarcodeScanPlugin {
   Future<Iterable<dynamic>> _getCameras() {
     Completer<Iterable<dynamic>> completer = new Completer<Iterable<dynamic>>();
     window.navigator.mediaDevices.enumerateDevices().then((devices) {
-      completer.complete(devices.where((device) => device.kind == 'videoinput'));
+      completer
+          .complete(devices.where((device) => device.kind == 'videoinput'));
     }).catchError((error) {
       completer.complete([]);
     });
@@ -58,8 +58,7 @@ class BarcodeScanPlugin {
       var buffer = call.arguments as Uint8List;
       config = proto.Configuration.fromBuffer(buffer);
     } else {
-      config = proto.Configuration()
-        ..useCamera = -1;
+      config = proto.Configuration()..useCamera = -1;
     }
     return scan(config);
   }
@@ -71,9 +70,12 @@ class BarcodeScanPlugin {
     var script = document.createElement('script');
     script.setAttribute('type', 'text/javascript');
     document.querySelector('head').append(script);
-    script.setAttribute('src', 'assets/packages/barcode_scan_web/assets/jsqrscanner.nocache.js');
+    script.setAttribute('src',
+        'assets/packages/barcode_scan_web/assets/jsqrscanner.nocache.js');
     _createHTML();
-    document.querySelector('#toolbar p').addEventListener('click', (event) => _onCloseByUser());
+    document
+        .querySelector('#toolbar p')
+        .addEventListener('click', (event) => _onCloseByUser());
     setProperty(window, 'JsQRScannerReady', allowInterop(this.scannerReady));
     _completer = new Completer<Uint8List>();
     return _completer.future;
@@ -82,16 +84,16 @@ class BarcodeScanPlugin {
   void _ensureMediaDevicesSupported() {
     if (window.navigator.mediaDevices == null) {
       throw PlatformException(
-        code: 'CAMERA_ACCESS_NOT_SUPPORTED',
-        message: "Camera access not supported by browser"
-      );
+          code: 'CAMERA_ACCESS_NOT_SUPPORTED',
+          message: "Camera access not supported by browser");
     }
   }
 
   void _createCSS() {
     var link = document.createElement('link');
     link.setAttribute('rel', 'stylesheet');
-    link.setAttribute('href', 'assets/packages/barcode_scan_web/assets/styles.css');
+    link.setAttribute(
+        'href', 'assets/packages/barcode_scan_web/assets/styles.css');
     document.querySelector('head').append(link);
   }
 
@@ -132,9 +134,7 @@ class BarcodeScanPlugin {
   void _onCloseByUser() {
     _close();
     _completer.completeError(PlatformException(
-      code: 'USER_CANCELED',
-      message: 'User closed the scan window'
-    ));
+        code: 'USER_CANCELED', message: 'User closed the scan window'));
   }
 
   void _close() {
@@ -148,8 +148,10 @@ class BarcodeScanPlugin {
   void scannerReady() {
     window.navigator.getUserMedia(video: true).then((stream) {
       window.navigator.mediaDevices.enumerateDevices().then((devices) {
-        _cameras = devices.where((device) => device.kind == 'videoinput').toList();
-        _scanner = JsQRScanner(allowInterop(this.onQRCodeScanned), allowInterop(this.provideVideo));
+        _cameras =
+            devices.where((device) => device.kind == 'videoinput').toList();
+        _scanner = JsQRScanner(allowInterop(this.onQRCodeScanned),
+            allowInterop(this.provideVideo));
         _scanner.setSnapImageMaxSize(300);
         var scannerParentElement = document.getElementById('scanner');
         _scanner.appendTo(scannerParentElement);
@@ -160,18 +162,22 @@ class BarcodeScanPlugin {
   Promise<MediaStream> provideVideo() {
     var videoPromise;
     if (_useCamera < 0) {
-      videoPromise = getUserMedia(new UserMediaOptions(video: new VideoOptions(facingMode: 'environment')));
+      videoPromise = getUserMedia(new UserMediaOptions(
+          video: new VideoOptions(facingMode: 'environment')));
     } else {
-      videoPromise = getUserMedia(new UserMediaOptions(video: new VideoOptions(deviceId: new DeviceIdOptions(exact: _cameras[_useCamera].deviceId))));
+      videoPromise = getUserMedia(new UserMediaOptions(
+          video: new VideoOptions(
+              deviceId:
+                  new DeviceIdOptions(exact: _cameras[_useCamera].deviceId))));
     }
     videoPromise.then(null, allowInterop(_reject));
     return videoPromise;
-  } 
+  }
 
   void _reject(reject) {
     _completer.completeError(PlatformException(
       code: 'PERMISSION_NOT_GRANTED',
-      message: 'Permission to access the camera not granted'
+      message: reject.toString(),
     ));
     _close();
   }
@@ -185,7 +191,7 @@ external Promise<MediaStream> getUserMedia(UserMediaOptions options);
 class UserMediaOptions {
   external VideoOptions get video;
 
-  external factory UserMediaOptions({ VideoOptions video });
+  external factory UserMediaOptions({VideoOptions video});
 }
 
 @JS()
@@ -194,7 +200,8 @@ class VideoOptions {
   external String get facingMode;
   external DeviceIdOptions get deviceId;
 
-  external factory VideoOptions({ String facingMode = null, DeviceIdOptions deviceId = null });
+  external factory VideoOptions(
+      {String facingMode = null, DeviceIdOptions deviceId = null});
 }
 
 @JS()
@@ -202,7 +209,7 @@ class VideoOptions {
 class DeviceIdOptions {
   external String get exact;
 
-  external factory DeviceIdOptions({ String exact });
+  external factory DeviceIdOptions({String exact});
 }
 
 @JS()
