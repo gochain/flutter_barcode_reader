@@ -1,3 +1,12 @@
+# Upgrade from 2.x to 3.0.0
+
+The `BarcodeScan.scan()` method returns a [`ScanResult`](./lib/model/scan_result.dart).
+The barcode is stored in `ScanResult.rawContent`
+Check your calls to this method and read the barcode from the `rawContent` property.
+
+If your project uses pre Flutter 1.12 you need to update Flutter in your App: https://github.com/flutter/flutter/wiki/Upgrading-pre-1.12-Android-projects
+
+
 # Upgrade from 1.0.0 to 2.0.0
 
 The simples way for upgrading is by replacing:
